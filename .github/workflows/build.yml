@@ -6,10 +6,10 @@ name: Build Electron App
 on:
   # 允许你从 Actions 标签页手动运行此工作流
   workflow_dispatch:
-  # 在 push 到 main 分支时触发
+  # 在 push 到 master 分支时触发
   push:
     branches:
-      - main
+      - master
   # 创建 release 时触发
   release:
     types: [created]
