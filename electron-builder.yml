@@ -4,6 +4,7 @@ win:
   target:
     - nsis
   icon: build-assets/icon.ico
+publish: null
 nsis:
   oneClick: false
   allowElevation: true
