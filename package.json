@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "app:dir": "electron-builder --dir",
-    "app:dist": "electron-builder",
+    "build": "electron-builder",
     "start": "electron ."
   },
   "author": "changdy",
