@@ -1,62 +1,34 @@
-# .github/workflows/build.yml
+name: Build and Release Electron App
 
-name: Build Electron App
-
-# 控制工作流何时触发
 on:
-  # 允许你从 Actions 标签页手动运行此工作流
-  workflow_dispatch:
-  # 在 push 到 master 分支时触发
   push:
     branches:
-      - master
-  # 创建 release 时触发
-  release:
-    types: [created]
+      - master # 仅在 push 到 master 分支时触发
+  workflow_dispatch: # 允许手动触发
 
 jobs:
-  build:
-    # 使用矩阵策略，在不同的操作系统上运行此作业
+  build_and_release:
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
-
-    # 根据矩阵中的 os 变量选择运行器
     runs-on: ${{ matrix.os }}
 
     steps:
-      # 步骤1: 检出你的代码
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 步骤2: 设置 Node.js 环境
-      # electron-builder 需要 Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # 建议使用一个稳定的 LTS 版本
-          cache: 'npm' # 缓存 npm 依赖，加快后续构建速度
+          node-version: '18'
+          cache: 'npm'
 
-      # 步骤3: 安装项目依赖
-      # 使用 npm ci 可以确保使用 package-lock.json 中的精确版本，构建更稳定
       - name: Install dependencies
         run: npm ci
 
-      # 步骤4: 运行 electron-builder 打包
-      # electron-builder 会自动根据运行的操作系统 (Windows/macOS) 和你的 yml 配置来选择正确的打包目标
-      - name: Build application
-        run: npm run build -- --publish never
-
-      # 步骤5: 上传构建产物
-      # 将打包好的文件（.exe, .dmg, .zip 等）作为构建产物上传
-      # 你可以在 Actions 的运行结果页面下载它们
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-${{ matrix.os }} # 根据操作系统命名产物，例如 dist-windows-latest
-          path: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.zip
-            dist/*.AppImage
-            !dist/*-unpacked/
+      - name: Build and release application
+        # 1. 修改 --publish always 来启用发布
+        # 2. 传入 GITHUB_TOKEN 以授权 electron-builder 操作 Release
+        run: npm run build -- --publish always
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
