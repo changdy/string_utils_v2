@@ -72,9 +72,9 @@ export default function setupTray(mainWindow, arg) {
         },
         {
             label: '设置快捷键',
-            click: () =>{
+            click: () => {
                 windows.center();
-                windows.webContents.send('change-hot-key');
+                windows.webContents.send('change-hot-key', {accelerator: store.get("accelerator")});
                 windows.show();
             }
         },

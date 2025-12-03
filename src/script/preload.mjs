@@ -55,7 +55,6 @@ async function initScript() {
 
 function hideWindow() {
     changeHotKey = false;
-    document.querySelector("#fun-list").style.display = 'flex';
     ipcRenderer.send('hide-window');
     textBoard.innerText = ""
 }
@@ -194,6 +193,11 @@ function parseText() {
     })
 }
 
+function showInfo(hotKey) {
+    let str = `您当前的快捷键为 ${hotKey}\n请直接按下您想设置的新快捷键，然后点击Enter按钮`;
+    textBoard.innerText = str;
+}
+
 
 ipcRenderer.on('toggle-show-solver', (event, args) => {
     skipList = store.get('skip-list') ?? [];
@@ -205,7 +209,4 @@ ipcRenderer.on('toggle-show-solver', (event, args) => {
 
 ipcRenderer.on('change-hot-key', _ => {
     changeHotKey = true;
-    document.querySelector("#fun-list").style.display = 'none';
 })
-
-

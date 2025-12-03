@@ -21,6 +21,11 @@ const USER_SCRIPT_DIR = path.join(app.getPath('userData'), 'user-scripts')
 const store = new Store()
 
 const port = 9987;
+let accelerator = store.get("accelerator");
+if (!accelerator) {
+    accelerator = "CommandOrControl+Alt+D";
+    store.set('accelerator', accelerator);
+}
 
 let mainWindow;
 
@@ -33,7 +38,7 @@ function createWindow() {
         frame: false,
         opacity: 0.9,
         skipTaskbar: true,
-        hasShadow:false,
+        hasShadow: false,
         transparent: true,
         maximizable: false,
         minimizable: false,
@@ -93,7 +98,7 @@ app.on('will-quit', () => {
 })
 
 function registerShortcut() {
-    globalShortcut.register("CommandOrControl+Alt+D", () => {
+    globalShortcut.register(accelerator, () => {
         let tempPoint = electron.screen.getCursorScreenPoint();
         mainWindow.setPosition(tempPoint.x - 180, tempPoint.y - 100);
         mainWindow.show();
