@@ -1,6 +1,6 @@
 // tray.js (保持你的现有逻辑，但移除顶层Tray创建)
 import path from 'node:path'
-import {Tray, Menu, nativeImage, app,shell} from 'electron'
+import {Tray, Menu, nativeImage, app, shell} from 'electron'
 import Store from 'electron-store'
 import {fileURLToPath} from 'node:url'
 import {dirname} from 'node:path'
@@ -11,7 +11,6 @@ const store = new Store()
 let windows = null;
 let tray = null;
 const USER_SCRIPT_DIR = path.join(app.getPath('userData'), 'user-scripts')
-
 
 
 function clickButton(item) {
@@ -69,6 +68,14 @@ export default function setupTray(mainWindow, arg) {
                         console.error('打开目录失败:', error)
                     }
                 })
+            }
+        },
+        {
+            label: '设置快捷键',
+            click: () =>{
+                windows.center();
+                windows.webContents.send('change-hot-key');
+                windows.show();
             }
         },
         {

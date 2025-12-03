@@ -31,7 +31,7 @@ function createWindow() {
         height: 400,
         resizable: false,
         frame: false,
-        opacity: 0.96,
+        opacity: 0.9,
         skipTaskbar: true,
         hasShadow:false,
         transparent: true,

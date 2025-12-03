@@ -18,6 +18,7 @@ window.clickTime = 0;
 let textBoard = null;
 let solverMap;
 let skipList = store.get('skip-list') ?? [];
+let changeHotKey = false;
 
 
 // 使用异步初始化
@@ -52,14 +53,18 @@ async function initScript() {
 }
 
 
+function hideWindow() {
+    changeHotKey = false;
+    document.querySelector("#fun-list").style.display = 'flex';
+    ipcRenderer.send('hide-window');
+    textBoard.innerText = ""
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     document.querySelector("#fun-list")
-        .addEventListener('click', () => ipcRenderer.send('hide-window'));
+        .addEventListener('click', () => hideWindow());
     window.addEventListener("focus", testLog);
-    window.addEventListener("blur", () => {
-        ipcRenderer.send('hide-window');
-        textBoard.innerText = ""
-    });
+    window.addEventListener("blur", () => hideWindow());
     appendToolIcon();
     textBoard = document.getElementById("body-text");
     testLog();
@@ -110,6 +115,9 @@ function appendToolIcon() {
 
 
 function testLog() {
+    if (changeHotKey) {
+        return;
+    }
     let str = clipboard.readText();
     if (str) {
         str = str.trim().replace(/\r/g, "");
@@ -117,7 +125,7 @@ function testLog() {
         const map = new Map();
         let strArr = str.split("\n");
         const jsonFlag = (str.startsWith("[") && str.endsWith("]")) || (str.startsWith("{") && str.endsWith("}"));
-        solvers.filter(x => !skipList.includes(x)).forEach(x => {
+        solvers.filter(x => !skipList.includes(x.name)).forEach(x => {
             try {
                 map.set(x.name, x.check(str, strArr, jsonFlag))
             } catch (e) {
@@ -187,12 +195,17 @@ function parseText() {
 }
 
 
-// 安全地暴露 IPC 通信接口到渲染进程
-contextBridge.exposeInMainWorld('electronAPI', {
-
-    // 监听主进程发送的事件
-    onToggleElement: (callback) => {
-        skipList = store.get('skip-list') ?? [];
-        ipcRenderer.on('toggle-show-solver', callback);
+ipcRenderer.on('toggle-show-solver', (event, args) => {
+    skipList = store.get('skip-list') ?? [];
+    const element = document.querySelector('.fun-list-item.' + args.name);
+    if (element) {
+        element.style.display = args.checked ? 'block' : 'none';
     }
-});
+})
+
+ipcRenderer.on('change-hot-key', _ => {
+    changeHotKey = true;
+    document.querySelector("#fun-list").style.display = 'none';
+})
+
+

@@ -1,34 +1,73 @@
-name: Build and Release Electron App
+# .github/workflows/release.yml
+name: Release Electron App
 
 on:
-  push:
-    branches:
-      - master # 仅在 push 到 master 分支时触发
-  workflow_dispatch: # 允许手动触发
+  # 仅当创建 Release 时触发 (通过 GitHub UI 创建 Release 会触发)
+  release:
+    types: [published]  # 关键修改：使用 published 事件
 
 jobs:
-  build_and_release:
+  build:
+    name: Build for ${{ matrix.platform }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-
+        platform: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 18
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build and release application
-        # 1. 修改 --publish always 来启用发布
-        # 2. 传入 GITHUB_TOKEN 以授权 electron-builder 操作 Release
-        run: npm run build -- --publish always
+      - name: Build application
+        run: npm run build -- --publish never
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 防止敏感信息泄露（如果使用 code signing）
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.platform }}
+          path: |
+            dist/*.*
+            !dist/*-unpacked/
+            !dist/builder-debug.yml
+
+  publish:
+    name: Publish Release
+    needs: build  # 依赖构建任务
+    runs-on: ubuntu-latest
+    # 仅当 Release 事件触发时运行
+    if: github.event_name == 'release'
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true  # 合并所有平台产物到单个目录
+
+      - name: Display structure
+        run: ls -R artifacts  # 调试用：查看产物结构
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/dist-*/**/*
+          # 自动从触发事件的 release 标签名和说明中获取信息
+          tag_name: ${{ github.event.release.tag_name }}
+          name: ${{ github.event.release.name }}
+          body: ${{ github.event.release.body }}
+          draft: false
+          prerelease: ${{ contains(github.event.release.tag_name, 'beta') || contains(github.event.release.tag_name, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 必须使用内置 token
