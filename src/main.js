@@ -63,7 +63,7 @@ function createWindow() {
             event.preventDefault();
         }
     });
-    if (app.isPackaged) {
+    if (!app.isPackaged) {
         mainWindow.webContents.openDevTools();
     }
 }

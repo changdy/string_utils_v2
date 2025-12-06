@@ -7,7 +7,7 @@ import {solver as mybatisExtractSolver} from './texthandler/mybatis-extract.js';
 import {solver as namingConversionSolver} from './texthandler/naming-conversion.js';
 import {solver as sortDistinctSolver} from './texthandler/sort-distinct.js';
 import {solver as sqlExtractSolver} from './texthandler/sql-extract.js';
-import hotkey from './hotkey.js';
+import {hotkey} from './hotkey.mjs';
 import {pathToFileURL} from 'url'; // 导入 Node.js 的 URL 工具
 import path from 'node:path'
 
@@ -114,7 +114,7 @@ function appendToolIcon() {
 
 
 function testLog() {
-    if (changeHotKey) {
+    if (hotkey.changeHotKey) {
         return;
     }
     let str = clipboard.readText();
