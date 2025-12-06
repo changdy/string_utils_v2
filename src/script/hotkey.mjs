@@ -3,6 +3,28 @@ import {ipcRenderer} from "electron";
 const hotkey = {
     isMac: new URLSearchParams(window.location.search).get('is-mac') === "true",
     changeHotKey: false,
+    key: '',
+    codeMap: {
+        'Backquote': '`',
+        'Minus': '-',
+        'Equal': '=',
+        'BracketLeft': '[',
+        'BracketRight': ']',
+        'Backslash': '\\',
+        'Semicolon': ';',
+        'Quote': "'",
+        'Comma': ',',
+        'Period': '.',
+        'Slash': '/',
+        'Space': 'Space',
+        'ArrowUp': 'Up',
+        'ArrowDown': 'Down',
+        'ArrowLeft': 'Left',
+        'ArrowRight': 'Right',
+        'Escape': 'Esc',
+        'Insert': 'Ins',
+        'Delete': 'Del'
+    },
     init(textBoard) {
         this.textBoard = textBoard;
         let hotkey = this;
@@ -15,65 +37,63 @@ const hotkey = {
     cancel() {
         this.changeHotKey = false;
     },
-    formatDisplayShortcut(shortcut) {
-        return shortcut
-            .replace('Meta+', this.isMac ? '⌘ ' : '⊞ ')
-            .replace('Control+', 'Ctrl+')
-            .replace('Alt+', this.isMac ? '⌥ ' : 'Alt+')
-            .replace('CmdOrCtrl+', this.isMac ? '⌘ ' : 'Ctrl+');
-    },
     handleKeyDownCapture(event) {
         if (!this.changeHotKey) {
             return;
         }
+        event.preventDefault();
 
-        event.preventDefault(); // 阻止浏览器默认行为（如滚动）
+        // 1. 获取修饰键
+        const parts = [];
+        if (event.ctrlKey) parts.push('Ctrl');
+        if (event.altKey) parts.push('Alt');
+        if (event.shiftKey) parts.push('Shift');
+        if (event.metaKey) parts.push('Cmd'); // macOS Command
 
+        // 2. 处理主键逻辑 (核心修改部分)
+        // 我们使用 event.code 而不是 event.key
+        // event.code 的值类似: "Digit4", "KeyA", "Backslash"
+        const code = event.code;
 
-        // 收集按下的修饰键（顺序：Meta > Ctrl > Alt > Shift）
-        const modifiers = [];
-        if (event.metaKey) modifiers.push('Meta');
-        if (event.ctrlKey) modifiers.push('Control');
-        if (event.altKey) modifiers.push('Alt');
-        if (event.shiftKey) modifiers.push('Shift');
+        // 如果按下的仅仅是修饰键本身，则不进行处理
+        let funKey = ['ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'ShiftLeft', 'ShiftRight', 'MetaLeft', 'MetaRight'].includes(code);
 
-        let shortcut;
-        if (['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
-            shortcut = [...modifiers].join('+');
-        } else {
-            // 格式化主按键（处理特殊键）
-            let key = this.formatKey(event.key);
-            shortcut = [...modifiers, key].join('+');
+        let mainKey = '';
+
+        // 场景 A: 字母 (KeyA -> A)
+        if (code.startsWith('Key')) {
+            mainKey = code.slice(3);
         }
-        // 更新显示
-        this.textBoard.innerText = this.formatDisplayShortcut(shortcut);
+        // 场景 B: 数字 (Digit4 -> 4) - 这里解决了 Shift+4 的问题
+        else if (code.startsWith('Digit')) {
+            mainKey = code.slice(5);
+        }
+        // 场景 C: 小键盘 (Numpad1 -> Num1)
+        else if (code.startsWith('Numpad')) {
+            // 也可以根据需求直接显示数字
+            mainKey = code.replace('Numpad', 'Num');
+        }
+        // 场景 D: 功能键 (F1 - F12)
+        else if (code.startsWith('F') && code.length <= 3) {
+            mainKey = code;
+        }
+        // 场景 E: 符号和其他键 (使用上面的映射表)
+        else {
+            mainKey = this.codeMap[code] || event.key.toUpperCase();
+        }
+        if (!funKey) {
+            parts.push(mainKey);
+        }
+
+        // 3. 显示与保存
+        if (parts.length) {
+            this.key = parts.join('+');
+            this.showInfo();
+        }
     },
-    formatKey(rawKey) {
-        const keyMap = {
-            ' ': 'Space',
-            'ArrowUp': 'Up',
-            'ArrowDown': 'Down',
-            'ArrowLeft': 'Left',
-            'ArrowRight': 'Right',
-            'Escape': 'Esc',
-            'Enter': 'Enter',
-            'Tab': 'Tab',
-            'Backspace': 'Backspace',
-            'Delete': 'Del'
-        };
-
-        // F1-F12 保持原样
-        if (/^F\d{1,2}$/.test(rawKey)) return rawKey;
-
-        // 字母/数字转大写
-        if (/^[a-zA-Z0-9]$/.test(rawKey)) return rawKey.toUpperCase();
-
-        // 特殊键映射
-        return keyMap[rawKey] || rawKey;
-    },
-    showInfo(hotKey) {
-        // let str = `您当前的快捷键为 ${hotKey}\n请直接按下您想设置的新快捷键，然后点击Enter按钮`;
-        // textBoard.innerText = str;
+    showInfo() {
+        let str = `当前快捷键 ${this.key}\n请直接按下您想设置的新快捷键，然后点击Enter按钮`;
+        this.textBoard.innerText = str;
     }
 
 };
