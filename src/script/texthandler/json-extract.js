@@ -1,4 +1,5 @@
-const JSONbig = require('json-bigint');
+import JSONbig from "json-bigint";
+
 
 const solver = {name: "json-extract", describe: "JSON中抽取数据,优先id", nextStep: "sort-distinct"};
 

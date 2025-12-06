@@ -1,6 +1,6 @@
-const CryptoJS = require("crypto-js");
-const crypto = require('crypto');
-const forge = require('node-forge');
+import CryptoJS from "crypto-js";
+import crypto from 'crypto';
+import forge from 'node-forge';
 
 
 const solver = {name: "decrypt", describe: "saa解密文本"};

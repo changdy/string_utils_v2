@@ -2,7 +2,8 @@ const solver = {name: "mybatis-extract", describe: "mybatis日志解析"};
 const logTypeArr = [/\WDEBUG\W/, /\WINFO\W/, /\WTRACE\W/, /\WWARN\W/, /\WERROR\W/]
 const nativeArr = "(Byte),(Float),(Long),(Short),(Double),(Integer),(Boolean),(BigDecimal)".split(',');
 const stringArr = "(String),(StringReader),(Timestamp),(LocalDate)".split(',');
-const safeEval = require('safe-eval')
+import safeEval from 'safe-eval';
+
 
 
 const mybatisReg = /@Select|@Update|@Delete|@Insert/;

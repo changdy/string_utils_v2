@@ -1,4 +1,5 @@
-const BigNumber = require("bignumber.js");
+import BigNumber from 'bignumber.js';
+
 const solver = {name: "sort-distinct", describe: "排序&去重", nextStep: "id-join"};
 
 
