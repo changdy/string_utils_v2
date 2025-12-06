@@ -30,8 +30,9 @@ const hotkey = {
         let hotkey = this;
         this.handleKeyDownCapture = this.handleKeyDownCapture.bind(this);
         document.addEventListener('keydown', this.handleKeyDownCapture);
-        ipcRenderer.on('change-hot-key', _ => {
+        ipcRenderer.on('change-hot-key', (event,arg) => {
             hotkey.changeHotKey = true;
+            this.textBoard.innerText = `当前快捷键: ${arg.accelerator}\n请直接按下新快捷键，然后点击Enter按钮`;
         })
     },
     cancel() {
@@ -92,7 +93,7 @@ const hotkey = {
         }
     },
     showInfo() {
-        let str = `当前快捷键 ${this.key}\n请直接按下您想设置的新快捷键，然后点击Enter按钮`;
+        let str = `当前快捷键: ${this.key}\n点击Enter按钮即可保存`;
         this.textBoard.innerText = str;
     }
 
