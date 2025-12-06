@@ -30,13 +30,22 @@ const hotkey = {
         let hotkey = this;
         this.handleKeyDownCapture = this.handleKeyDownCapture.bind(this);
         document.addEventListener('keydown', this.handleKeyDownCapture);
-        ipcRenderer.on('change-hot-key', (event,arg) => {
+        ipcRenderer.on('change-hot-key', (event, arg) => {
             hotkey.changeHotKey = true;
             this.textBoard.innerText = `当前快捷键: ${arg.accelerator}\n请直接按下新快捷键，然后点击Enter按钮`;
         })
     },
     cancel() {
         this.changeHotKey = false;
+    },
+    async resetKey() {
+        let key = this.key;
+        const result = await ipcRenderer.invoke('reset-hot-key', { key });
+        if (result.success) {
+            this.textBoard.innerText = `快捷键: ${key}注册成功`;
+        } else {
+            this.textBoard.innerText = `快捷键: ${key}注册失败`;
+        }
     },
     handleKeyDownCapture(event) {
         if (!this.changeHotKey) {
@@ -89,14 +98,9 @@ const hotkey = {
         // 3. 显示与保存
         if (parts.length) {
             this.key = parts.join('+');
-            this.showInfo();
+            this.textBoard.innerText = `当前快捷键: ${this.key}\n点击Enter按钮即可保存`;
         }
-    },
-    showInfo() {
-        let str = `当前快捷键: ${this.key}\n点击Enter按钮即可保存`;
-        this.textBoard.innerText = str;
     }
-
 };
 
 

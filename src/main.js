@@ -105,7 +105,7 @@ app.on('will-quit', () => {
 })
 
 function registerShortcut() {
-    globalShortcut.register(accelerator, () => {
+    return globalShortcut.register(accelerator, () => {
         let tempPoint = electron.screen.getCursorScreenPoint();
         mainWindow.setPosition(tempPoint.x - 180, tempPoint.y - 100);
         mainWindow.show();
@@ -141,5 +141,26 @@ electron.ipcMain.on('open-url', async (event, logs) => {
         // };
         // axios.request(options).then(response => shell.openExternal(response.data.location))
         shell.openExternal(express.saveUrl(logs, port))
+    }
+);
+
+
+electron.ipcMain.handle('reset-hot-key', async (event, arg) => {
+        try {
+            globalShortcut.unregisterAll();
+            store.set('accelerator', arg.key);
+            accelerator = arg.key;
+            let result = registerShortcut();
+            return {
+                success: result,
+                accelerator: arg.key,
+                message: result ? '快捷键设置成功' : '快捷键设置失败'
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: `设置失败: ${error.message}`
+            };
+        }
     }
 );

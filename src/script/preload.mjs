@@ -154,12 +154,16 @@ function addAnimate() {
         button.classList.remove('animate');
         button.classList.add('animate');
         setTimeout(() => button.classList.remove('animate'), 500);
-        parseText();
+        if (hotkey.changeHotKey) {
+            hotkey.resetKey();
+        } else {
+            parseText();
+        }
     };
     button.addEventListener('click', animateButton, false);
 
     document.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
+        if (event.key === 'Enter' && !hotkey.changeHotKey) {
             // 执行当 Enter 键被按下时的逻辑
             animateButton(event);
         }
