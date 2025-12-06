@@ -63,7 +63,9 @@ function createWindow() {
             event.preventDefault();
         }
     });
-    mainWindow.webContents.openDevTools();
+    if (app.isPackaged) {
+        mainWindow.webContents.openDevTools();
+    }
 }
 
 app.commandLine.appendSwitch('wm-window-animations-disabled');
