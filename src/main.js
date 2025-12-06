@@ -49,7 +49,11 @@ function createWindow() {
         }
     })
     // 加载 index.html
-    mainWindow.loadFile('src/page/index.html')
+    mainWindow.loadFile('src/page/index.html', {
+        query: {
+            "is-mac": process.platform === 'darwin'
+        }
+    });
     mainWindow.webContents.on('before-input-event', (event, input) => {
         // 如果按下了Escape键
         if (input.key === 'Escape') {
@@ -59,6 +63,7 @@ function createWindow() {
             event.preventDefault();
         }
     });
+    mainWindow.webContents.openDevTools();
 }
 
 app.commandLine.appendSwitch('wm-window-animations-disabled');

@@ -7,6 +7,7 @@ import {solver as mybatisExtractSolver} from './texthandler/mybatis-extract.js';
 import {solver as namingConversionSolver} from './texthandler/naming-conversion.js';
 import {solver as sortDistinctSolver} from './texthandler/sort-distinct.js';
 import {solver as sqlExtractSolver} from './texthandler/sql-extract.js';
+import hotkey from './hotkey.js';
 import {pathToFileURL} from 'url'; // 导入 Node.js 的 URL 工具
 import path from 'node:path'
 
@@ -18,8 +19,6 @@ window.clickTime = 0;
 let textBoard = null;
 let solverMap;
 let skipList = store.get('skip-list') ?? [];
-let changeHotKey = false;
-
 
 // 使用异步初始化
 await initScript().catch(console.error);
@@ -54,7 +53,7 @@ async function initScript() {
 
 
 function hideWindow() {
-    changeHotKey = false;
+    hotkey.cancel();
     ipcRenderer.send('hide-window');
     textBoard.innerText = ""
 }
@@ -68,6 +67,7 @@ window.addEventListener('DOMContentLoaded', () => {
     textBoard = document.getElementById("body-text");
     testLog();
     addAnimate();
+    hotkey.init(textBoard);
 })
 
 function appendToolIcon() {
@@ -193,11 +193,6 @@ function parseText() {
     })
 }
 
-function showInfo(hotKey) {
-    let str = `您当前的快捷键为 ${hotKey}\n请直接按下您想设置的新快捷键，然后点击Enter按钮`;
-    textBoard.innerText = str;
-}
-
 
 ipcRenderer.on('toggle-show-solver', (event, args) => {
     skipList = store.get('skip-list') ?? [];
@@ -205,8 +200,4 @@ ipcRenderer.on('toggle-show-solver', (event, args) => {
     if (element) {
         element.style.display = args.checked ? 'block' : 'none';
     }
-})
-
-ipcRenderer.on('change-hot-key', _ => {
-    changeHotKey = true;
 })
