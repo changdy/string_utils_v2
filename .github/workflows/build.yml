@@ -15,7 +15,17 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - platform: windows-latest
+            artifact_name: windows
+          - platform: ubuntu-latest
+            artifact_name: linux
+          - platform: macos-latest
+            arch: x64
+            artifact_name: mac-x64
+          - platform: macos-latest
+            arch: arm64
+            artifact_name: mac-arm64
     
     runs-on: ${{ matrix.platform }}
     steps:
@@ -31,22 +41,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # macOS 专用：禁用签名
-      - name: Disable macOS signing
+      # 配置 macOS 构建环境
+      - name: Configure macOS build
         if: matrix.platform == 'macos-latest'
-        run: echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> $GITHUB_ENV
+        run: |
+          # 禁用签名（两个架构都需要）
+          echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> $GITHUB_ENV
+          # 设置目标架构
+          echo "npm_config_arch=${{ matrix.arch }}" >> $GITHUB_ENV
+          # 重建 native 模块（关键步骤！）
+          npm rebuild --arch=${{ matrix.arch }}
 
       - name: Build application
         run: npm run build
         env:
-          # 通用环境变量（根据项目需要调整）
           ELECTRON_CACHE: ${{ github.workspace }}/.cache/electron
           ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
+          # 显式指定目标架构（electron-builder 需要）
+          ELECTRON_ARCH: ${{ matrix.arch == 'x64' && 'x64' || 'arm64' }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.platform }}
+          name: ${{ matrix.artifact_name }}-build
           path: |
             dist/*.exe
             dist/*.dmg
@@ -66,5 +83,17 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
-          body: "Automated release for ${{ github.ref_name }}"
-          files: artifacts/**/*
+          body: |
+            ## Changes
+            Automated release for ${{ github.ref_name }}
+            
+            ## Installers
+            - **Windows**: `setup.exe`
+            - **macOS (Intel)**: `*-x64.dmg`
+            - **macOS (Apple Silicon)**: `*-arm64.dmg`
+            - **Linux**: `*.AppImage`
+          files: |
+            artifacts/windows-build/*.exe
+            artifacts/linux-build/*.AppImage
+            artifacts/mac-x64-build/*-x64.dmg
+            artifacts/mac-arm64-build/*-arm64.dmg
