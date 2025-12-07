@@ -2,8 +2,11 @@ name: Release Electron App
 
 on:
   push:
-    tags:
-      - 'v*'  # 仅当推送 tag（如 v1.0.0）时触发
+    branches:
+      - master
+  # 创建 release 时触发
+  release:
+    types: [created]
 
 permissions:
   contents: write  # 必须授权才能创建 Release
@@ -45,8 +48,8 @@ jobs:
         with:
           name: build-${{ matrix.platform }}
           path: |
-            dist/*  # 通常 electron-builder 输出到 dist 目录
-            !dist/*.blockmap  # 可选：排除不必要的文件
+            dist/*
+            !dist/*.blockmap
             !dist/latest.yml
 
   release:
