@@ -48,10 +48,9 @@ jobs:
         with:
           name: build-${{ matrix.platform }}
           path: |
-            dist/*
-            !dist/*.blockmap
-            !dist/latest.yml
-
+            dist/*.exe
+            dist/*.dmg
+            dist/*.snap
   release:
     needs: build
     runs-on: ubuntu-latest
