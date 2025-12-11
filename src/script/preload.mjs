@@ -1,5 +1,4 @@
 import {clipboard, ipcRenderer, webFrame, contextBridge} from 'electron';
-import {solver as decryptSolver} from './texthandler/decrypt.js';
 import {solver as idJoinSolver} from './texthandler/id-join.js';
 import {solver as jsonExtractSolver} from './texthandler/json-extract.js';
 import {solver as jsonViewSolver} from './texthandler/json-view.js';
@@ -14,7 +13,7 @@ import path from 'node:path'
 import Store from 'electron-store';
 
 const store = new Store();
-const solvers = [decryptSolver, idJoinSolver, jsonExtractSolver, jsonViewSolver, mybatisExtractSolver, namingConversionSolver, sortDistinctSolver, sqlExtractSolver];
+const solvers = [ idJoinSolver, jsonExtractSolver, jsonViewSolver, mybatisExtractSolver, namingConversionSolver, sortDistinctSolver, sqlExtractSolver];
 window.clickTime = 0;
 let textBoard = null;
 let solverMap;

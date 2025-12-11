@@ -1,5 +1,5 @@
 const solver = {name: "json-view", describe: "使用json hero预览"};
-import ipcRenderer from 'electron';
+import {ipcRenderer} from 'electron';
 
 
 solver.check = (logs, arr, jsonFlag) => {
