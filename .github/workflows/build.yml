@@ -68,6 +68,7 @@ jobs:
             dist/*.exe
             dist/*.dmg
             dist/*.snap
+            !dist/*-unpacked/
   release:
     needs: build
     runs-on: ubuntu-latest
