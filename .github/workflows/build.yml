@@ -4,9 +4,8 @@ on:
   push:
     branches:
       - master
-  # 创建 release 时触发
-  release:
-    types: [created]
+    tags:
+      - 'v*'  # 只有推送到v开头的tag时才触发
 
 permissions:
   contents: write  # 必须授权才能创建 Release
@@ -65,10 +64,9 @@ jobs:
         with:
           name: ${{ matrix.artifact_name }}-build
           path: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.snap
+            dist/*
             !dist/*-unpacked/
+            !dist/*.blockmap
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -94,7 +92,7 @@ jobs:
             - **macOS (Apple Silicon)**: `*-arm64.dmg`
             - **Linux**: `*.AppImage`
           files: |
-            artifacts/windows-build/*.exe
-            artifacts/linux-build/*.AppImage
-            artifacts/mac-x64-build/*-x64.dmg
-            artifacts/mac-arm64-build/*-arm64.dmg
+            artifacts/*/*.exe
+            artifacts/*/*.dmg
+            artifacts/*/*.zip
+            artifacts/*/*.AppImage

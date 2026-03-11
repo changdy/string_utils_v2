@@ -34,3 +34,8 @@ dmg:
       y: 220
       type: link
       path: /Applications   # 创建"应用程序"文件夹快捷方式
+linux:
+  target:
+    - AppImage
+    - tar.gz
+  icon: build-assets/icon.png
