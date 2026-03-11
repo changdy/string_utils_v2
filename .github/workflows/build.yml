@@ -64,8 +64,10 @@ jobs:
         with:
           name: ${{ matrix.artifact_name }}-build
           path: |
-            dist/*
-            !dist/*-unpacked/
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+            dist/*.AppImage
             !dist/*.blockmap
   release:
     needs: build
@@ -92,7 +94,7 @@ jobs:
             - **macOS (Apple Silicon)**: `*-arm64.dmg`
             - **Linux**: `*.AppImage`
           files: |
-            artifacts/*/*.exe
-            artifacts/*/*.dmg
-            artifacts/*/*.zip
-            artifacts/*/*.AppImage
+            artifacts/*.exe
+            artifacts/*.dmg
+            artifacts/*.zip
+            artifacts/*.AppImage
