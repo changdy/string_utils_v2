@@ -97,4 +97,4 @@ export default function setupTray(mainWindow, arg) {
     return tray
 }
 
-app.on('will-quit', () => tray.destroy());
+app.on('will-quit', () => tray?.destroy());

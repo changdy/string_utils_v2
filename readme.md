@@ -58,12 +58,13 @@ express : nodejs的服务器,部署 jsoncrack
 
 json-bigint : 序列化json的时候保存数字精度
 
-lru-cache : lru缓存控制器, 自动淘汰过期的数据
+lru-cache : 搭配 json-crack使用
 
 node-forge : electron 相关
 
 safe-eval : 解析mybatis注解上的sql
 
+## 增加自定义脚本
 
 
 
