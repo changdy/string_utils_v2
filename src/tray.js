@@ -61,6 +61,19 @@ export default function setupTray(mainWindow, arg) {
         ...arr,
         {type: 'separator'},
         {
+            label: '开机自动启动',
+            type: 'checkbox',
+            checked: store.get('auto-launch', false),
+            click: (menuItem) => {
+                const enabled = menuItem.checked;
+                store.set('auto-launch', enabled);
+                app.setLoginItemSettings({
+                    openAtLogin: enabled,
+                    path: process.execPath
+                });
+            }
+        },
+        {
             label: '打开用户脚本目录',
             click: () => {
                 shell.openPath(USER_SCRIPT_DIR).then(error => {

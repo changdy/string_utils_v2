@@ -7,10 +7,14 @@ import {solver as namingConversionSolver} from './texthandler/naming-conversion.
 import {solver as sortDistinctSolver} from './texthandler/sort-distinct.js';
 import {solver as sqlExtractSolver} from './texthandler/sql-extract.js';
 import {hotkey} from './hotkey.mjs';
-import {pathToFileURL} from 'url'; // 导入 Node.js 的 URL 工具
+import {pathToFileURL} from 'url';
 import path from 'node:path'
+import {createRequire} from 'module';
 
 import Store from 'electron-store';
+
+// 为用户脚本创建 require 函数，指向应用的 node_modules
+const appRequire = createRequire(import.meta.url);
 
 const store = new Store();
 const solvers = [ idJoinSolver, jsonExtractSolver, jsonViewSolver, mybatisExtractSolver, namingConversionSolver, sortDistinctSolver, sqlExtractSolver];
@@ -25,20 +29,31 @@ await initScript().catch(console.error);
 
 async function initScript() {
     const userScripts = store.get('userScripts') ?? [];
+
+    // 预加载常用依赖
+    const CryptoJS = appRequire('crypto-js');
+    const nodeCrypto = appRequire('crypto');
+    const forge = appRequire('node-forge');
+
+    // 注入全局变量和 require 函数
+    globalThis.CryptoJS = CryptoJS;
+    globalThis.nodeCrypto = nodeCrypto; // 使用 nodeCrypto 避免与 window.crypto 冲突
+    globalThis.forge = forge;
+    globalThis.require = appRequire; // 允许用户脚本使用 require
+
     await Promise.all(
-        userScripts.map(async (path) => {
+        userScripts.map(async (scriptPath) => {
             try {
-                // 使用动态导入，这是ESM中加载动态模块的正确方式
-                const fileUrl = pathToFileURL(path).href;
+                const fileUrl = pathToFileURL(scriptPath).href;
                 const module = await import(fileUrl);
 
                 if (module.solver) {
                     module.solver.userScripts = true;
-                    module.solver.path = path.toString().replaceAll(/\.js$/gi, "");
+                    module.solver.path = scriptPath.toString().replaceAll(/\.js$/gi, "");
                     solvers.push(module.solver);
                 }
             } catch (error) {
-                console.error(`加载脚本 ${path} 失败:`, error);
+                console.error(`加载脚本 ${scriptPath} 失败:`, error);
             }
         })
     );
@@ -46,7 +61,6 @@ async function initScript() {
         solvers.map(object => [object.name, object])
     );
 
-    // 可选：通知主进程初始化完成
     ipcRenderer.send('preload-scripts-loaded', {solvers: JSON.stringify(solvers)});
 }
 

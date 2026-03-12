@@ -6,7 +6,6 @@ import {fileURLToPath} from 'node:url'
 import {app, Menu, nativeImage, BrowserWindow, globalShortcut, shell} from 'electron'
 import electron from 'electron'
 import express from './express.js'
-import axios from 'axios'
 import setupTray from './tray.js'
 import fs from 'fs'
 import Store from 'electron-store'
@@ -45,6 +44,7 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: true,
             sandbox: false,
+            contextIsolation: false,
             preload: path.join(__dirname, 'script/preload.mjs')
         }
     })
