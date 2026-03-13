@@ -6,6 +6,7 @@ import {solver as mybatisExtractSolver} from './texthandler/mybatis-extract.js';
 import {solver as namingConversionSolver} from './texthandler/naming-conversion.js';
 import {solver as sortDistinctSolver} from './texthandler/sort-distinct.js';
 import {solver as sqlExtractSolver} from './texthandler/sql-extract.js';
+import {solver as diffJSON} from './texthandler/json-diff.js';
 import {hotkey} from './hotkey.mjs';
 import {pathToFileURL} from 'url';
 import path from 'node:path'
@@ -17,7 +18,7 @@ import Store from 'electron-store';
 const appRequire = createRequire(import.meta.url);
 
 const store = new Store();
-const solvers = [ idJoinSolver, jsonExtractSolver, jsonViewSolver, mybatisExtractSolver, namingConversionSolver, sortDistinctSolver, sqlExtractSolver];
+const solvers = [ idJoinSolver, jsonExtractSolver, jsonViewSolver, mybatisExtractSolver, namingConversionSolver, sortDistinctSolver, sqlExtractSolver,diffJSON];
 window.clickTime = 0;
 let textBoard = null;
 let solverMap;

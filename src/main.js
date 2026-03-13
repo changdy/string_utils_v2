@@ -10,6 +10,8 @@ import setupTray from './tray.js'
 import fs from 'fs'
 import Store from 'electron-store'
 import process from 'process'
+import { spawn } from 'child_process'
+import os from 'os'
 
 // 获取当前文件的目录路径（ES Module 中替代 __dirname）
 const __filename = fileURLToPath(import.meta.url)
@@ -143,6 +145,65 @@ electron.ipcMain.on('open-url', async (event, logs) => {
         shell.openExternal(express.saveUrl(logs, port))
     }
 );
+
+electron.ipcMain.on('open-diff', async (event, data) => {
+    try {
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substring(7);
+
+        const file1Path = path.join(os.tmpdir(), `json-diff-${timestamp}-${random}-1.json`);
+        const file2Path = path.join(os.tmpdir(), `json-diff-${timestamp}-${random}-2.json`);
+
+        fs.writeFileSync(file1Path, JSON.stringify(data.obj1, null, 2), 'utf8');
+        fs.writeFileSync(file2Path, JSON.stringify(data.obj2, null, 2), 'utf8');
+
+        // Try different methods to open VSCode diff
+        const vscodePaths = [
+            'code', // Standard PATH command
+            'C:\\Program Files\\Microsoft VS Code\\bin\\code.cmd', // Windows default
+            'C:\\Users\\' + os.userInfo().username + '\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\code.cmd', // User install
+            '/usr/bin/code', // Linux
+            '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code' // macOS
+        ];
+
+        let vscodeOpened = false;
+        let lastError = null;
+
+        for (const vscodePath of vscodePaths) {
+            try {
+                const vscode = spawn(vscodePath, ['--diff', file1Path, file2Path], {
+                    detached: true,
+                    stdio: 'ignore',
+                    shell: true
+                });
+
+                vscode.on('error', (err) => {
+                    console.log(`VSCode path ${vscodePath} failed:`, err.message);
+                });
+
+                vscode.unref();
+                vscodeOpened = true;
+                console.log(`VSCode opened successfully using: ${vscodePath}`);
+                break;
+
+            } catch (error) {
+                lastError = error;
+                console.log(`Failed to open VSCode with ${vscodePath}:`, error.message);
+            }
+        }
+
+        if (!vscodeOpened) {
+            console.error('Could not find VSCode. Tried paths:', vscodePaths);
+            console.error('Last error:', lastError);
+            // Fallback: open files in default editor
+            shell.openExternal(file1Path);
+            shell.openExternal(file2Path);
+        }
+
+    } catch (error) {
+        console.error('Failed to open diff:', error);
+    }
+});
 
 
 electron.ipcMain.handle('reset-hot-key', async (event, arg) => {
