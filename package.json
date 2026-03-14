@@ -1,6 +1,6 @@
 {
   "name": "str_toolkit",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "进行一些常用字符串工具的处理",
   "main": "src/main.js",
   "type": "module",
