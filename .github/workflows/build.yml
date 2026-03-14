@@ -2,8 +2,6 @@ name: Release Electron App
 
 on:
   push:
-    branches:
-      - master
     tags:
       - 'v*'  # 只有推送到v开头的tag时才触发
 
