@@ -2,6 +2,8 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { LRUCache } from 'lru-cache';
+import net from 'net';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,6 +21,8 @@ const options = {
 
 const cache = new LRUCache(options);
 
+let jsonheroPort = null;
+
 // 设置静态文件目录
 app.use(express.static(html));
 
@@ -26,6 +30,37 @@ app.use(express.static(html));
 app.get('/api/json-str', (req, res) => {
     const uuid = req.query.uuid;
     res.send(cache.get(uuid));
+});
+
+// JSON Hero 跳转接口
+app.get('/api/json-hero', async (req, res) => {
+    const uuid = req.query.uuid;
+    const jsonStr = cache.get(uuid);
+
+    if (!jsonStr) {
+        return res.status(404).json({ error: 'UUID not found' });
+    }
+
+    if (!jsonheroPort) {
+        return res.status(503).json({ error: 'JSON Hero service not available' });
+    }
+
+    try {
+        const response = await fetch(`http://127.0.0.1:${jsonheroPort}/api/create.json`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: 'json-hero', content: JSON.parse(jsonStr) })
+        });
+
+        if (!response.ok) {
+            return res.status(502).json({ error: 'JSON Hero service returned error', status: response.status });
+        }
+
+        const data = await response.json();
+        res.json({ url: `http://127.0.0.1:${jsonheroPort}/j/${data.id}` });
+    } catch (error) {
+        res.status(503).json({ error: 'Failed to connect to JSON Hero service', message: error.message });
+    }
 });
 
 function uuid(len, radix) {
@@ -64,13 +99,37 @@ export function saveUrl(str, port) {
     return `http://127.0.0.1:${port}/editor.html?json=http://127.0.0.1:${port}/api/json-str?uuid=` + uuidStr;
 }
 
-export function start(port) {
+
+function isPortAvailable(port) {
+    return new Promise((resolve) => {
+        const server = net.createServer();
+        server.once('error', () => resolve(false));
+        server.once('listening', () => server.close(() => resolve(true)));
+        server.listen(port, '127.0.0.1');
+    });
+}
+
+async function findAvailablePort(start = 9987, end = 9997) {
+    for (let port = start; port <= end; port++) {
+        if (await isPortAvailable(port)) return port;
+    }
+    throw new Error(`No available port found in range ${start}~${end}`);
+}
+
+export async function start() {
+    const port = await findAvailablePort();
     app.listen(port, () => {
         console.log(`Server running at http://localhost:${port}/`);
     });
+    return port;
+}
+
+export function setJsonHeroPort(port) {
+    jsonheroPort = port;
 }
 
 export default {
     saveUrl,
-    start
+    start,
+    setJsonHeroPort
 };

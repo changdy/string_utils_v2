@@ -5,8 +5,9 @@
   "main": "src/main.js",
   "type": "module",
   "scripts": {
+    "install:json-hero": "node scripts/install-json-hero.js",
     "app:dir": "electron-builder --dir",
-    "build": "electron-builder  --publish never",
+    "build": "npm run install:json-hero && electron-builder  --publish never",
     "start": "electron ."
   },
   "author": "changdy",
@@ -26,6 +27,7 @@
     "json-bigint": "^1.0.0",
     "lru-cache": "^10.2.2",
     "node-forge": "^1.3.3",
-    "safe-eval": "^0.4.1"
+    "safe-eval": "^0.4.1",
+    "tar": "^7.5.13"
   }
 }

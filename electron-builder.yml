@@ -39,3 +39,12 @@ linux:
     - AppImage
     - tar.gz
   icon: build-assets/icon.png
+extraResources:
+  - from: "./jsonhero-web-node/build"
+    to: "jsonhero-web-node/build"
+  - from: "./jsonhero-web-node/public"
+    to: "jsonhero-web-node/public"
+  - from: "./jsonhero-web-node/server.js"
+    to: "jsonhero-web-node/server.js"
+  - from: "./jsonhero-web-node/node_modules"
+    to: "jsonhero-web-node/node_modules"

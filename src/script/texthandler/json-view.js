@@ -10,7 +10,7 @@ solver.check = (logs, arr, jsonFlag) => {
     return 100;
 };
 solver.transfer = (logs, arr) => {
-    ipcRenderer.send('open-url', logs)
+    ipcRenderer.send('open-jsonhero', logs)
     return logs;
 }
 
