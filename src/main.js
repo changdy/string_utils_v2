@@ -6,7 +6,6 @@ import {fileURLToPath} from 'node:url'
 import {app, Menu, nativeImage, BrowserWindow, globalShortcut, shell} from 'electron'
 import electron from 'electron'
 import express from './express.js'
-import jsonheroManager from './jsonhero-manager.js'
 import setupTray from './tray.js'
 import fs from 'fs'
 import Store from 'electron-store'
@@ -22,8 +21,7 @@ const USER_SCRIPT_DIR = path.join(app.getPath('userData'), 'user-scripts')
 
 const store = new Store()
 
-let port = 9987;
-let jsonheroPort = null;
+const port = 9987;
 let accelerator = store.get("accelerator");
 if (!accelerator) {
     accelerator = "CommandOrControl+Alt+D";
@@ -84,16 +82,7 @@ app.whenReady().then(() => {
         return;
     }
     loadUserScripts();
-    express.start().then(availablePort => {
-        port = availablePort;
-    });
-    jsonheroManager.start().then(result => {
-        jsonheroPort = result.port;
-        express.setJsonHeroPort(result.port);
-        console.log(`JSON Hero service started on port ${result.port}`);
-    }).catch(err => {
-        console.error('Failed to start JSON Hero service:', err);
-    });
+    express.start(port);
     app.on("second-instance", _ => mainWindow?.show?.());
     registerShortcut();
     createWindow();
@@ -115,7 +104,6 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', () => {
     globalShortcut.unregisterAll()
-    jsonheroManager.stop()
 })
 
 function registerShortcut() {
@@ -157,24 +145,6 @@ electron.ipcMain.on('open-url', async (event, logs) => {
         shell.openExternal(express.saveUrl(logs, port))
     }
 );
-
-electron.ipcMain.on('open-jsonhero', async (event, logs) => {
-    if (!jsonheroManager.isReady()) {
-        console.error('JSON Hero service is not ready');
-        return;
-    }
-    try {
-        const response = await fetch(`http://127.0.0.1:${jsonheroPort}/api/create.json`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: 'json-hero', content: JSON.parse(logs) })
-        });
-        const data = await response.json();
-        shell.openExternal(`http://127.0.0.1:${jsonheroPort}/j/${data.id}`);
-    } catch (error) {
-        console.error('Failed to open JSON Hero:', error);
-    }
-});
 
 electron.ipcMain.on('open-diff', async (event, data) => {
     try {
