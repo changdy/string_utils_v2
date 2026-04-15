@@ -21,9 +21,6 @@ export function startJsonHeroServer() {
     fs.writeFileSync(pkgFile, '{"type":"commonjs"}');
   }
 
-  // Prevent auto-start: Electron calls startJsonHero() explicitly
-  process.env.JSONHERO_EMBEDDED = '1';
-
   // require CJS compiled output
   const mod = require('../jsonhero/dist/index.js');
 
