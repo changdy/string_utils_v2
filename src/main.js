@@ -6,6 +6,7 @@ import {fileURLToPath} from 'node:url'
 import {app, Menu, nativeImage, BrowserWindow, globalShortcut, shell} from 'electron'
 import electron from 'electron'
 import express from './express.js'
+import { startJsonHeroServer, saveToJsonHero } from './jsonhero-starter.js'
 import setupTray from './tray.js'
 import fs from 'fs'
 import Store from 'electron-store'
@@ -83,6 +84,11 @@ app.whenReady().then(() => {
     }
     loadUserScripts();
     express.start(port);
+    try {
+        startJsonHeroServer();
+    } catch (e) {
+        console.warn('[jsonhero] Failed to start, skipping:', e.message);
+    }
     app.on("second-instance", _ => mainWindow?.show?.());
     registerShortcut();
     createWindow();
@@ -132,17 +138,17 @@ function loadUserScripts() {
 electron.ipcMain.on('preload-scripts-loaded', (event, arg) => setupTray(mainWindow, arg));
 electron.ipcMain.on('hide-window', () => mainWindow.hide());
 electron.ipcMain.on('open-url', async (event, logs) => {
-        // const options = {
-        //     method: 'POST',
-        //     timeout: 3000,
-        //     url: 'http://175.24.232.123:8787/api/create.json',
-        //     data: `{
-        //        "title": "json-read",
-        //        "content": ${logs}
-        //     }`
-        // };
-        // axios.request(options).then(response => shell.openExternal(response.data.location))
-        shell.openExternal(express.saveUrl(logs, port))
+        try {
+            const jsonheroViewUrl = await saveToJsonHero(logs);
+            shell.openExternal(jsonheroViewUrl);
+        } catch (e) {
+            console.warn('[jsonhero] Fallback to json-crack:', e.message);
+        }
+        try {
+            shell.openExternal(express.saveUrl(logs, port));
+        } catch (e) {
+            console.warn('[json-crack] error', e.message);
+        }
     }
 );
 

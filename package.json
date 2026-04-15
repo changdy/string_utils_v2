@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "app:dir": "electron-builder --dir",
+    "fetch:jsonhero": "node scripts/fetch-jsonhero.js",
     "build": "electron-builder  --publish never",
     "start": "electron ."
   },
@@ -20,12 +21,15 @@
     "bignumber.js": "^9.1.2",
     "crypto": "^1.0.1",
     "crypto-js": "^4.2.0",
+    "dotenv": "^16.0.0",
     "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^10.0.1",
     "express": "^4.19.2",
     "json-bigint": "^1.0.0",
     "lru-cache": "^10.2.2",
+    "nanoid": "^3.2.0",
     "node-forge": "^1.3.3",
-    "safe-eval": "^0.4.1"
+    "safe-eval": "^0.4.1",
+    "@xmldom/xmldom": "^0.8.2"
   }
 }
