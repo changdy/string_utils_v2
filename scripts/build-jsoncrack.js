@@ -23,7 +23,7 @@ const __dirname = path.dirname(__filename);
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const JSONCRACK_DIR = path.join(PROJECT_ROOT, 'json-crack');
-const REPO = 'git@github.com:AykutSarac/jsoncrack.com.git';
+const REPO = 'https://github.com/AykutSarac/jsoncrack.com.git';
 
 const VERSION = process.argv.includes('--version')
   ? process.argv[process.argv.indexOf('--version') + 1]
