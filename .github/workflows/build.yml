@@ -39,9 +39,10 @@ jobs:
         run: npm ci
 
       - name: Diagnostics - node_modules size
+        shell: bash
         run: |
           echo "=== node_modules ==="
-          du -sh node_modules 2>/dev/null || powershell -Command "$s=(Get-ChildItem node_modules -Recurse -File|Measure-Object -Property Length -Sum).Sum; Write-Host ('{0:N2} MB' -f ($s/1MB))"
+          du -sh node_modules 2>/dev/null || echo "du not available"
           echo "=== production deps ==="
           npm ls --prod --all 2>/dev/null || echo "npm ls failed"
 
@@ -51,13 +52,14 @@ jobs:
         run: node scripts/fetch-jsonhero.js
 
       - name: Diagnostics - jsonhero directory
+        shell: bash
         run: |
           echo "=== jsonhero/ contents ==="
-          ls -laR jsonhero/ 2>/dev/null || dir /s jsonhero\
+          ls -laR jsonhero/ 2>/dev/null || echo "ls failed"
           echo "=== jsonhero/ size ==="
-          du -sh jsonhero/ 2>/dev/null || powershell -Command "$s=(Get-ChildItem jsonhero -Recurse -File|Measure-Object -Property Length -Sum).Sum; Write-Host ('{0:N2} MB' -f ($s/1MB))"
+          du -sh jsonhero/ 2>/dev/null || echo "du not available"
           echo "=== jsonhero/ top-level dirs ==="
-          ls -d jsonhero/*/ 2>/dev/null || dir /ad jsonhero\ 2>/dev/null || echo "no subdirs"
+          ls -d jsonhero/*/ 2>/dev/null || echo "no subdirs"
 
       # 配置 macOS 构建环境
       - name: Configure macOS build
@@ -79,17 +81,18 @@ jobs:
           ELECTRON_ARCH: ${{ matrix.arch == 'x64' && 'x64' || 'arm64' }}
 
       - name: Diagnostics - build output
+        shell: bash
         run: |
           echo "=== dist/ contents ==="
-          ls -la dist/ 2>/dev/null || dir dist\
+          ls -la dist/ 2>/dev/null || echo "no dist dir"
           echo "=== dist/ size ==="
-          du -sh dist/ 2>/dev/null || powershell -Command "$s=(Get-ChildItem dist -Recurse -File|Measure-Object -Property Length -Sum).Sum; Write-Host ('{0:N2} MB' -f ($s/1MB))"
+          du -sh dist/ 2>/dev/null || echo "du not available"
           echo "=== app.asar size ==="
-          ls -lh dist/win-unpacked/resources/app.asar 2>/dev/null || dir dist\win-unpacked\resources\app.asar 2>/dev/null || echo "no app.asar"
+          ls -lh dist/win-unpacked/resources/app.asar 2>/dev/null || ls -lh dist/mac*/str_toolkit.app/Contents/Resources/app.asar 2>/dev/null || ls -lh dist/linux-unpacked/resources/app.asar 2>/dev/null || echo "no app.asar"
           echo "=== app.asar.unpacked contents ==="
-          ls -laR dist/win-unpacked/resources/app.asar.unpacked/ 2>/dev/null || dir /s dist\win-unpacked\resources\app.asar.unpacked\ 2>/dev/null || echo "no app.asar.unpacked"
+          ls -laR dist/win-unpacked/resources/app.asar.unpacked/ 2>/dev/null || ls -laR dist/mac*/str_toolkit.app/Contents/Resources/app.asar.unpacked/ 2>/dev/null || ls -laR dist/linux-unpacked/resources/app.asar.unpacked/ 2>/dev/null || echo "no app.asar.unpacked"
           echo "=== installer size ==="
-          ls -lh dist/*.exe 2>/dev/null || dir dist\*.exe 2>/dev/null || echo "no exe"
+          ls -lh dist/*.exe 2>/dev/null || echo "no exe"
           ls -lh dist/*.dmg 2>/dev/null || echo "no dmg"
           ls -lh dist/*.AppImage 2>/dev/null || echo "no AppImage"
 
