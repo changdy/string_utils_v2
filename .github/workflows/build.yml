@@ -38,63 +38,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Diagnostics - node_modules size breakdown
-        shell: bash
-        run: |
-          echo "=== TOTAL node_modules ==="
-          du -sh node_modules 2>/dev/null || echo "du not available"
-          echo "=== Top-20 largest packages in node_modules ==="
-          du -sh node_modules/* 2>/dev/null | sort -rh | head -20
-          echo "=== Production deps only (simulated) ==="
-          npm ls --prod --all 2>/dev/null | head -50 || echo "npm ls failed"
-          echo "=== Production node_modules size (npm prune --dry-run) ==="
-          npm prune --production --dry-run 2>&1 | tail -5 || echo "prune dry-run failed"
-
       - name: Fetch JSONHero release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/fetch-jsonhero.js
-
-      - name: Diagnostics - jsonhero directory deep analysis
-        shell: bash
-        run: |
-          echo "=== jsonhero/ total size ==="
-          du -sh jsonhero/ 2>/dev/null || echo "du not available"
-          echo "=== jsonhero/ top-level entries with sizes ==="
-          du -sh jsonhero/*/ 2>/dev/null || echo "no subdirs"
-          ls -la jsonhero/ 2>/dev/null || echo "ls failed"
-          echo "=== jsonhero/dist/ size ==="
-          du -sh jsonhero/dist/ 2>/dev/null || echo "no dist"
-          echo "=== jsonhero/dist/ largest files ==="
-          find jsonhero/dist/ -type f -exec du -h {} + 2>/dev/null | sort -rh | head -20 || echo "find failed"
-          echo "=== jsonhero/public/ size ==="
-          du -sh jsonhero/public/ 2>/dev/null || echo "no public"
-          echo "=== jsonhero/ UNEXPECTED dirs (not dist/ or public/) ==="
-          ls -d jsonhero/*/ 2>/dev/null | grep -v -E '(dist|public)' || echo "only dist and public - OK"
-          echo "=== jsonhero/ UNEXPECTED files at root ==="
-          find jsonhero/ -maxdepth 1 -type f 2>/dev/null || echo "no root files"
-          echo "=== jsonhero/ has node_modules? ==="
-          find jsonhero/ -name "node_modules" -type d 2>/dev/null || echo "no node_modules - OK"
-          echo "=== jsonhero/ has .map source maps? ==="
-          find jsonhero/ -name "*.map" -type f 2>/dev/null | head -10 || echo "no .map files"
-          echo "=== jsonhero/ has src/ directory? ==="
-          ls -d jsonhero/src/ 2>/dev/null && echo "WARNING: src/ found!" || echo "no src/ - OK"
-
-      - name: Diagnostics - json-crack source maps and size
-        shell: bash
-        run: |
-          echo "=== json-crack/ total size ==="
-          du -sh json-crack/ 2>/dev/null || echo "du not available"
-          echo "=== json-crack/ .map files total size ==="
-          find json-crack/ -name "*.map" -type f -exec du -ch {} + 2>/dev/null | tail -1 || echo "no .map files"
-          echo "=== json-crack/ .map file count ==="
-          find json-crack/ -name "*.map" -type f 2>/dev/null | wc -l || echo "0"
-          echo "=== json-crack/ subdirectory sizes ==="
-          du -sh json-crack/*/ 2>/dev/null | sort -rh
-          echo "=== json-crack/ monaco-editor size ==="
-          du -sh json-crack/monaco-editor/ 2>/dev/null || echo "no monaco-editor"
-          echo "=== json-crack/ _next size ==="
-          du -sh json-crack/_next/ 2>/dev/null || echo "no _next"
 
       - name: Configure macOS build
         if: matrix.platform == 'macos-latest'
@@ -109,60 +56,10 @@ jobs:
       - name: Build application
         run: npm run build
         env:
-          ELECTRON_CACHE: ${{ github.workspace }}/.cache/electron
-          ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
+          ELECTRON_CACHE: ${{ runner.temp }}/electron-cache
+          ELECTRON_BUILDER_CACHE: ${{ runner.temp }}/electron-builder-cache
           # 显式指定目标架构（electron-builder 需要）
           ELECTRON_ARCH: ${{ matrix.arch == 'x64' && 'x64' || 'arm64' }}
-
-      - name: Diagnostics - build output and asar analysis
-        shell: bash
-        run: |
-          echo "=== dist/ contents ==="
-          ls -la dist/ 2>/dev/null || echo "no dist dir"
-          echo "=== dist/ size ==="
-          du -sh dist/ 2>/dev/null || echo "du not available"
-          echo "=== app.asar size ==="
-          ASAR_PATH=$(find dist/ -name "app.asar" 2>/dev/null | head -1)
-          if [ -n "$ASAR_PATH" ]; then
-            ls -lh "$ASAR_PATH"
-            echo "=== app.asar top-level directory sizes (via npx asar) ==="
-            npx asar list "$ASAR_PATH" 2>/dev/null | head -5 || echo "asar list not available"
-            echo "=== Extracting asar to temp dir for size analysis ==="
-            TEMP_DIR=$(mktemp -d)
-            npx asar extract "$ASAR_PATH" "$TEMP_DIR" 2>/dev/null || echo "asar extract failed"
-            if [ -d "$TEMP_DIR" ]; then
-              echo "--- Top-level dirs in asar ---"
-              du -sh "$TEMP_DIR"/*/ 2>/dev/null | sort -rh | head -20
-              echo "--- node_modules size in asar ---"
-              du -sh "$TEMP_DIR/node_modules" 2>/dev/null || echo "no node_modules in asar"
-              echo "--- Top-10 largest packages in asar/node_modules ---"
-              du -sh "$TEMP_DIR"/node_modules/*/ 2>/dev/null | sort -rh | head -10
-              echo "--- json-crack/ size in asar ---"
-              du -sh "$TEMP_DIR/json-crack" 2>/dev/null || echo "no json-crack in asar"
-              echo "--- jsonhero/ size in asar ---"
-              du -sh "$TEMP_DIR/jsonhero" 2>/dev/null || echo "no jsonhero in asar"
-              echo "--- .map files in asar ---"
-              find "$TEMP_DIR" -name "*.map" -type f -exec du -ch {} + 2>/dev/null | tail -1 || echo "no .map files"
-              echo "--- Total extracted asar size ---"
-              du -sh "$TEMP_DIR" 2>/dev/null
-              rm -rf "$TEMP_DIR"
-            fi
-          else
-            echo "no app.asar found"
-          fi
-          echo "=== app.asar.unpacked size ==="
-          UNPACKED_DIR=$(find dist/ -path "*/app.asar.unpacked" -type d 2>/dev/null | head -1)
-          if [ -n "$UNPACKED_DIR" ]; then
-            du -sh "$UNPACKED_DIR" 2>/dev/null
-            echo "--- app.asar.unpacked top-level sizes ---"
-            du -sh "$UNPACKED_DIR"/*/ 2>/dev/null | sort -rh
-          else
-            echo "no app.asar.unpacked"
-          fi
-          echo "=== installer size ==="
-          ls -lh dist/*.exe 2>/dev/null || echo "no exe"
-          ls -lh dist/*.dmg 2>/dev/null || echo "no dmg"
-          ls -lh dist/*.AppImage 2>/dev/null || echo "no AppImage"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
