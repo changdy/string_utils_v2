@@ -1,5 +1,5 @@
 import {clipboard, ipcRenderer, webFrame, contextBridge} from 'electron';
-import log from 'electron-log/renderer';
+import log from 'electron-log/renderer.js';
 import {solver as idJoinSolver} from './texthandler/id-join.js';
 import {solver as jsonExtractSolver} from './texthandler/json-extract.js';
 import {solver as jsonViewSolver} from './texthandler/json-view.js';
