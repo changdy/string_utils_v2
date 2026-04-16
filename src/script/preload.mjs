@@ -1,4 +1,5 @@
 import {clipboard, ipcRenderer, webFrame, contextBridge} from 'electron';
+import log from 'electron-log/renderer';
 import {solver as idJoinSolver} from './texthandler/id-join.js';
 import {solver as jsonExtractSolver} from './texthandler/json-extract.js';
 import {solver as jsonViewSolver} from './texthandler/json-view.js';
@@ -18,6 +19,9 @@ import Store from 'electron-store';
 const appRequire = createRequire(import.meta.url);
 
 const store = new Store();
+// 拦截渲染进程 console 输出到日志文件
+Object.assign(console, log.functions);
+
 const solvers = [ idJoinSolver, jsonExtractSolver, jsonViewSolver, mybatisExtractSolver, namingConversionSolver, sortDistinctSolver, sqlExtractSolver,diffJSON];
 window.clickTime = 0;
 let textBoard = null;

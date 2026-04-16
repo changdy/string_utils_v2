@@ -5,6 +5,7 @@ import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {app, Menu, nativeImage, BrowserWindow, globalShortcut, shell} from 'electron'
 import electron from 'electron'
+import log from 'electron-log/main'
 import express from './express.js'
 import { startJsonHeroServer, saveToJsonHero } from './jsonhero-starter.js'
 import setupTray from './tray.js'
@@ -17,6 +18,10 @@ import os from 'os'
 // 获取当前文件的目录路径（ES Module 中替代 __dirname）
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+// 初始化 electron-log，拦截 console 输出到文件
+log.initialize()
+Object.assign(console, log.functions)
 
 const USER_SCRIPT_DIR = path.join(app.getPath('userData'), 'user-scripts')
 
