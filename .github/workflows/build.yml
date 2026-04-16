@@ -32,8 +32,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 24
           cache: 'npm'
+
+      - name: Setup pnpm
+        run: corepack enable && corepack prepare pnpm@10.20.0 --activate
 
       - name: Install dependencies
         run: npm ci
@@ -42,6 +45,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/fetch-jsonhero.js
+
+      - name: Build JSONCrack
+        run: node scripts/build-jsoncrack.js
 
       - name: Configure macOS build
         if: matrix.platform == 'macos-latest'
@@ -59,7 +65,7 @@ jobs:
           ELECTRON_CACHE: ${{ runner.temp }}/electron-cache
           ELECTRON_BUILDER_CACHE: ${{ runner.temp }}/electron-builder-cache
           # 显式指定目标架构（electron-builder 需要）
-          ELECTRON_ARCH: ${{ matrix.arch == 'x64' && 'x64' || 'arm64' }}
+          ELECTRON_ARCH: ${{ matrix.arch || 'x64' }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

@@ -7,6 +7,7 @@
   "scripts": {
     "app:dir": "electron-builder --dir",
     "fetch:jsonhero": "node scripts/fetch-jsonhero.js",
+    "build:jsoncrack": "node scripts/build-jsoncrack.js",
     "build": "electron-builder  --publish never",
     "start": "electron ."
   },

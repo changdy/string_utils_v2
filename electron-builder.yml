@@ -2,6 +2,7 @@ appId: changdy.util.str
 asar: true                # 启用代码压缩
 asarUnpack:
   - "jsonhero/public/**/*"
+  - "json-crack/**/*"
 win:
   target:
     - nsis
