@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url'
 import {app, Menu, nativeImage, BrowserWindow, globalShortcut, shell} from 'electron'
 import electron from 'electron'
 import log from 'electron-log/main.js'
-import express from './express.js'
+import jsoncrack from './jsoncrack-starter.js'
 import { startJsonHeroServer, saveToJsonHero } from './jsonhero-starter.js'
 import setupTray from './tray.js'
 import fs from 'fs'
@@ -27,7 +27,9 @@ const USER_SCRIPT_DIR = path.join(app.getPath('userData'), 'user-scripts')
 
 const store = new Store()
 
-const port = 9987;
+const PORT_START = 9987;
+const PORT_END = 10087;
+let port = PORT_START;
 let accelerator = store.get("accelerator");
 if (!accelerator) {
     accelerator = "CommandOrControl+Alt+D";
@@ -88,12 +90,11 @@ app.whenReady().then(() => {
         return;
     }
     loadUserScripts();
-    express.start(port);
-    try {
-        startJsonHeroServer();
-    } catch (e) {
-        console.warn('[jsonhero] Failed to start, skipping:', e.message);
-    }
+    jsoncrack.start(PORT_START, PORT_END)
+        .then((actualPort) => { port = actualPort; })
+        .catch((err) => console.error('[json-crack] Failed to start:', err));
+    startJsonHeroServer()
+        .catch((e) => console.warn('[jsonhero] Failed to start, skipping:', e.message));
     app.on("second-instance", _ => mainWindow?.show?.());
     registerShortcut();
     createWindow();
@@ -150,7 +151,7 @@ electron.ipcMain.on('open-url', async (event, logs) => {
             console.warn('[jsonhero] Fallback to json-crack:', e.message);
         }
         try {
-            shell.openExternal(express.saveUrl(logs, port));
+            shell.openExternal(jsoncrack.saveUrl(logs, port));
         } catch (e) {
             console.warn('[json-crack] error', e.message);
         }

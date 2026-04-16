@@ -64,9 +64,23 @@ export function saveUrl(str, port) {
     return `http://127.0.0.1:${port}/editor.html?json=http://127.0.0.1:${port}/api/json-str?uuid=` + uuidStr;
 }
 
-export function start(port) {
-    app.listen(port, () => {
-        console.log(`Server running at http://localhost:${port}/`);
+export function start(startPort, endPort = startPort) {
+    return new Promise((resolve, reject) => {
+        const tryListen = (port) => {
+            const server = app.listen(port, () => {
+                console.log(`Server running at http://localhost:${port}/`);
+                resolve(port);
+            });
+            server.on('error', (err) => {
+                if (err.code === 'EADDRINUSE' && port < endPort) {
+                    console.warn(`[json-crack] Port ${port} in use, trying ${port + 1}`);
+                    tryListen(port + 1);
+                } else {
+                    reject(err);
+                }
+            });
+        };
+        tryListen(startPort);
     });
 }
 

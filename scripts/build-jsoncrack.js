@@ -23,7 +23,7 @@ const __dirname = path.dirname(__filename);
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const JSONCRACK_DIR = path.join(PROJECT_ROOT, 'json-crack');
-const REPO = 'https://github.com/AykutSarac/jsoncrack.com.git';
+const REPO = 'git@github.com:AykutSarac/jsoncrack.com.git';
 
 const VERSION = process.argv.includes('--version')
   ? process.argv[process.argv.indexOf('--version') + 1]
@@ -33,7 +33,8 @@ const VERSION = process.argv.includes('--version')
 
 function run(cmd, opts = {}) {
   console.log(`[build-jsoncrack] > ${cmd}`);
-  execSync(cmd, { stdio: 'pipe', windowsHide: true, ...opts });
+  const { inherit, ...execOpts } = opts;
+  execSync(cmd, { stdio: inherit ? 'inherit' : 'pipe', windowsHide: true, ...execOpts });
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────
@@ -73,7 +74,7 @@ async function main() {
 
     // 4. Build www app
     console.log('[build-jsoncrack] Building www app...');
-    run('pnpm build:www', { cwd: tmpDir, timeout: 600000 });
+    run('pnpm build:www', { cwd: tmpDir, timeout: 600000, inherit: true });
 
     // 5. Verify build output
     const outDir = path.join(tmpDir, 'apps', 'www', 'out');

@@ -1,16 +1,39 @@
 import { createRequire } from 'module';
 import path from 'path';
 import fs from 'fs';
+import net from 'net';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const require = createRequire(__filename);
 
-const JSONHERO_PORT = 13001;
+const PORT_START = 13001;
+const PORT_END = 13101;
 let jsonheroUrl = null;
 
-export function startJsonHeroServer() {
+function findAvailablePort(startPort, endPort) {
+  return new Promise((resolve, reject) => {
+    let port = startPort;
+    function tryPort() {
+      if (port > endPort) {
+        reject(new Error(`No available port in range ${startPort}-${endPort}`));
+        return;
+      }
+      const server = net.createServer();
+      server.listen(port, '127.0.0.1', () => {
+        server.close(() => resolve(port));
+      });
+      server.on('error', () => {
+        port++;
+        tryPort();
+      });
+    }
+    tryPort();
+  });
+}
+
+export async function startJsonHeroServer() {
   process.env.NODE_ENV = 'production';
 
   // Ensure jsonhero/dist/ is treated as CommonJS (root package.json has "type": "module")
@@ -24,13 +47,15 @@ export function startJsonHeroServer() {
   // require CJS compiled output
   const mod = require('../jsonhero/dist/index.js');
 
+  const port = await findAvailablePort(PORT_START, PORT_END);
+
   if (typeof mod.startJsonHero === 'function') {
     // New compiled output: call startJsonHero explicitly
-    mod.startJsonHero({ port: JSONHERO_PORT });
+    mod.startJsonHero({ port });
   }
   // Old compiled output: require() already auto-started the server (top-level app.listen)
 
-  jsonheroUrl = `http://127.0.0.1:${JSONHERO_PORT}`;
+  jsonheroUrl = `http://127.0.0.1:${port}`;
   console.log(`[jsonhero] Server started at ${jsonheroUrl}`);
   return jsonheroUrl;
 }
