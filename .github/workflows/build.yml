@@ -84,6 +84,8 @@ jobs:
         run: node scripts/fetch-jsonhero.js
 
       - name: Build JSONCrack
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/build-jsoncrack.js
 
       - name: Configure macOS build

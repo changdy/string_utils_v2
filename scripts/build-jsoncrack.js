@@ -42,7 +42,9 @@ function run(cmd, opts = {}) {
 
 async function getLatestReleaseTag() {
   const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest`;
-  const res = await fetch(url, { headers: { 'User-Agent': 'node-build-script' } });
+  const headers = { 'User-Agent': 'node-build-script' };
+  if (process.env.GITHUB_TOKEN) headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+  const res = await fetch(url, { headers });
   if (!res.ok) throw new Error(`GitHub API returned ${res.status}: ${res.statusText}`);
   const data = await res.json();
   return data.tag_name;
