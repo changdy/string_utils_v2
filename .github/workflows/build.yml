@@ -2,14 +2,51 @@ name: Release Electron App
 
 on:
   push:
-    tags:
-      - 'v*'  # 只有推送到v开头的tag时才触发
+    branches:
+      - master  # 推送到main分支时触发
 
 permissions:
   contents: write  # 必须授权才能创建 Release
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.check.outputs.should_build }}
+      new_version: ${{ steps.check.outputs.new_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 需要完整历史以获取所有tag
+
+      - name: Check version change
+        id: check
+        run: |
+          PKG_VERSION=$(jq -r .version package.json)
+          echo "Package version: $PKG_VERSION"
+          LATEST_TAG=$(git tag -l 'v*' --sort=-version:refname | head -n 1)
+          echo "Latest tag: $LATEST_TAG"
+          if [ "$LATEST_TAG" = "v$PKG_VERSION" ]; then
+            echo "Version unchanged ($LATEST_TAG), skipping build"
+            echo "should_build=false" >> $GITHUB_OUTPUT
+          else
+            echo "Version changed! v$PKG_VERSION != $LATEST_TAG"
+            echo "should_build=true" >> $GITHUB_OUTPUT
+            echo "new_version=$PKG_VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create and push tag
+        if: steps.check.outputs.should_build == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ steps.check.outputs.new_version }}"
+          git push origin "v${{ steps.check.outputs.new_version }}"
+
   build:
+    needs: check-version
+    if: needs.check-version.outputs.should_build == 'true'
     strategy:
       matrix:
         include:
@@ -77,8 +114,10 @@ jobs:
             dist/*.zip
             dist/*.AppImage
             !dist/*.blockmap
+
   release:
-    needs: build
+    needs: [check-version, build]
+    if: needs.check-version.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -90,11 +129,11 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
+          tag_name: v${{ needs.check-version.outputs.new_version }}
+          name: Release v${{ needs.check-version.outputs.new_version }}
           body: |
             ## Changes
-            Automated release for ${{ github.ref_name }}
+            Automated release for v${{ needs.check-version.outputs.new_version }}
             
             ## Installers
             - **Windows**: `setup.exe`
