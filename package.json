@@ -1,6 +1,6 @@
 {
   "name": "str_toolkit",
-  "version": "3.4.1",
+  "version": "3.4.3",
   "description": "进行一些常用字符串工具的处理",
   "main": "src/main.js",
   "type": "module",
@@ -15,7 +15,7 @@
   "license": "ISC",
   "devDependencies": {
     "electron": "38.7.1",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^25.1.6"
   },
   "dependencies": {
     "@xmldom/xmldom": "^0.8.2",
@@ -25,13 +25,11 @@
     "crypto-js": "^4.2.0",
     "dotenv": "^16.0.0",
     "electron-log": "^5.4.3",
-    "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^10.0.1",
     "express": "^4.19.2",
     "json-bigint": "^1.0.0",
     "lru-cache": "^10.2.2",
     "nanoid": "^3.2.0",
-    "node-forge": "^1.3.3",
-    "safe-eval": "^0.4.1"
+    "node-forge": "^1.3.3"
   }
 }

@@ -2,11 +2,92 @@ const solver = {name: "mybatis-extract", describe: "mybatis日志解析"};
 const logTypeArr = [/\WDEBUG\W/, /\WINFO\W/, /\WTRACE\W/, /\WWARN\W/, /\WERROR\W/]
 const nativeArr = "(Byte),(Float),(Long),(Short),(Double),(Integer),(Boolean),(BigDecimal)".split(',');
 const stringArr = "(String),(StringReader),(Timestamp),(LocalDate)".split(',');
-import safeEval from 'safe-eval';
-
 
 
 const mybatisReg = /@Select|@Update|@Delete|@Insert/;
+
+function extractMybatisAnnotationString(expression) {
+    const source = expression.trim();
+    let result = "";
+    let index = 0;
+    let foundLiteral = false;
+    while (index < source.length) {
+        const char = source[index];
+        if (/\s/.test(char) || char === '+' || char === ',' || char === '{' || char === '}') {
+            index++;
+            continue;
+        }
+        if (char !== '"' && char !== "'") {
+            throw new Error(`Unsupported MyBatis annotation token: ${char}`);
+        }
+        foundLiteral = true;
+        const quote = char;
+        index++;
+        let value = "";
+        let closed = false;
+        while (index < source.length) {
+            const current = source[index];
+            if (current === '\\') {
+                const next = source[index + 1];
+                if (next === undefined) {
+                    throw new Error("Invalid MyBatis annotation escape sequence");
+                }
+                if (next === 'u') {
+                    const hex = source.slice(index + 2, index + 6);
+                    if (!/^[0-9a-fA-F]{4}$/.test(hex)) {
+                        throw new Error("Invalid MyBatis annotation unicode escape");
+                    }
+                    value += String.fromCharCode(parseInt(hex, 16));
+                    index += 6;
+                    continue;
+                }
+                value += decodeJavaStringEscape(next);
+                index += 2;
+                continue;
+            }
+            if (current === quote) {
+                closed = true;
+                index++;
+                break;
+            }
+            value += current;
+            index++;
+        }
+        if (!closed) {
+            throw new Error("Unterminated MyBatis annotation string literal");
+        }
+        result += value;
+    }
+    return foundLiteral ? result : source;
+}
+
+function decodeJavaStringEscape(char) {
+    if (char === 'n') {
+        return '\n';
+    }
+    if (char === 'r') {
+        return '\r';
+    }
+    if (char === 't') {
+        return '\t';
+    }
+    if (char === 'b') {
+        return '\b';
+    }
+    if (char === 'f') {
+        return '\f';
+    }
+    if (char === '\\') {
+        return '\\';
+    }
+    if (char === '"') {
+        return '"';
+    }
+    if (char === "'") {
+        return "'";
+    }
+    return char;
+}
 
 
 solver.check = (logs, arr, jsonFlag) => {
@@ -26,7 +107,11 @@ solver.transfer = (logs, logArr) => {
     if (mybatisReg.test(logs)) {
         logs = logs.replace(/@Select\(|@Update\(|@Delete\(|@Insert\(/, "");
         let s = logs.substring(0, logs.lastIndexOf(")")).trim();
-        return safeEval(s);
+        try {
+            return extractMybatisAnnotationString(s);
+        } catch {
+            return s;
+        }
     }
     let resultArr = [];
     for (let index = logArr.length - 1; index > 0; index--) {
