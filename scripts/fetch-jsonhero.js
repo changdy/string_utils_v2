@@ -165,7 +165,7 @@ async function main() {
       console.error('[fetch-jsonhero] tar extraction failed:', e2.message);
       // Try node-based extraction as last resort
       console.log('[fetch-jsonhero] Trying Node.js based extraction...');
-      extractWithNode(tmpFile, JSONHERO_DIR);
+      await extractWithNode(tmpFile, JSONHERO_DIR);
     }
   }
 
@@ -189,11 +189,11 @@ async function main() {
  * Uses zlib + tar-stream-like manual parsing. For simplicity, falls back to
  * requiring the 'tar' npm package if available.
  */
-function extractWithNode(tmpFile, destDir) {
+async function extractWithNode(tmpFile, destDir) {
   try {
-    // Try using the 'tar' package if installed
-    const tar = require('tar');
-    tar.x({
+    // Try using the 'tar' package if installed (dynamic import for ESM compatibility)
+    const tar = await import('tar');
+    await tar.x({
       file: tmpFile,
       cwd: destDir,
       strip: 1,

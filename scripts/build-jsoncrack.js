@@ -111,7 +111,7 @@ async function main() {
     console.log('[build-jsoncrack] Ensuring pnpm is available...');
     try {
       run('corepack enable', { cwd: sourcePath });
-      run('corepack prepare pnpm@latest --activate', { cwd: sourcePath });
+      run('corepack prepare pnpm@10.20.0 --activate', { cwd: sourcePath });
     } catch {
       // Fallback: try npm install -g pnpm
       console.log('[build-jsoncrack] corepack not available, installing pnpm via npm...');
