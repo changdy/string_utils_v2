@@ -82,6 +82,7 @@ async function main() {
   }
 
   const tmpDir = path.join(os.tmpdir(), `jsoncrack-build-${Date.now()}`);
+  fs.mkdirSync(tmpDir, { recursive: true });
 
   try {
     // 1. Determine version tag
