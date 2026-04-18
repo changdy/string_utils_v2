@@ -167,7 +167,7 @@ function testLog() {
 function addAnimate() {
     const button = document.querySelectorAll(".bubbly-button")[0];
     const animateButton = e => {
-        e.preventDefault;
+        e.preventDefault();
         //reset animation
         button.classList.remove('animate');
         button.classList.add('animate');

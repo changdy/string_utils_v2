@@ -12,7 +12,7 @@ import setupTray from './tray.js'
 import fs from 'fs'
 import Store from 'electron-store'
 import process from 'process'
-import { spawn } from 'child_process'
+import {execFile} from 'node:child_process'
 import os from 'os'
 
 // 获取当前文件的目录路径（ES Module 中替代 __dirname）
@@ -80,15 +80,15 @@ function createWindow() {
 
 app.commandLine.appendSwitch('wm-window-animations-disabled');
 
+// requestSingleInstanceLock 必须在 ready 事件之前调用
+if (!app.requestSingleInstanceLock()) {
+    app.quit();
+}
 
 // 这段程序将会在 Electron 结束初始化
 // 和创建浏览器窗口的时候调用
 // 部分 API 在 ready 事件触发后才能使用。
 app.whenReady().then(() => {
-    if (!app.requestSingleInstanceLock()) {
-        app.quit();
-        return;
-    }
     loadUserScripts();
     jsoncrack.start(PORT_START, PORT_END)
         .then((actualPort) => { port = actualPort; })
@@ -106,7 +106,6 @@ app.whenReady().then(() => {
         }
     })
 })
-
 
 // 除了 macOS 外，当所有窗口都被关闭的时候退出程序。 因此, 通常
 // 对应用程序和它们的菜单栏来说应该时刻保持激活状态, 
@@ -126,7 +125,7 @@ function registerShortcut() {
     });
 }
 
-
+// 加载用户脚本
 function loadUserScripts() {
     if (!fs.existsSync(USER_SCRIPT_DIR)) {
         fs.mkdirSync(USER_SCRIPT_DIR, {recursive: true})
@@ -148,13 +147,9 @@ electron.ipcMain.on('open-url', async (event, logs) => {
             const jsonheroViewUrl = await saveToJsonHero(logs);
             shell.openExternal(jsonheroViewUrl);
         } catch (e) {
-            console.warn('[jsonhero] Fallback to json-crack:', e.message);
+            console.warn('[jsonhero] failed to open url:', e.message);
         }
-        try {
-            shell.openExternal(jsoncrack.saveUrl(logs, port));
-        } catch (e) {
-            console.warn('[json-crack] error', e.message);
-        }
+        shell.openExternal(jsoncrack.saveUrl(logs, port));
     }
 );
 
@@ -169,54 +164,37 @@ electron.ipcMain.on('open-diff', async (event, data) => {
         fs.writeFileSync(file1Path, JSON.stringify(data.obj1, null, 2), 'utf8');
         fs.writeFileSync(file2Path, JSON.stringify(data.obj2, null, 2), 'utf8');
 
-        // Try different methods to open VSCode diff
-        const vscodePaths = [
-            'code', // Standard PATH command
-            'C:\\Program Files\\Microsoft VS Code\\bin\\code.cmd', // Windows default
-            'C:\\Users\\' + os.userInfo().username + '\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\code.cmd', // User install
-            '/usr/bin/code', // Linux
-            '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code' // macOS
-        ];
+        const diffArgs = ['--diff', file1Path, file2Path];
+        const codeCmd = process.platform === 'win32' ? 'code.cmd' : 'code';
+        const execOpts = process.platform === 'win32' ? { shell: true } : {};
 
-        let vscodeOpened = false;
-        let lastError = null;
+        execFile(codeCmd, diffArgs, execOpts, async (error) => {
+            if (error) {
+                // code 不在 PATH 中，尝试已知安装路径
+                const fallbackPaths = process.platform === 'win32'
+                    ? [path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Microsoft VS Code', 'bin', 'code.cmd')]
+                    : process.platform === 'darwin'
+                        ? ['/usr/local/bin/code', '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code']
+                        : ['/usr/bin/code', '/usr/local/bin/code', '/snap/bin/code'];
 
-        for (const vscodePath of vscodePaths) {
-            try {
-                const vscode = spawn(vscodePath, ['--diff', file1Path, file2Path], {
-                    detached: true,
-                    stdio: 'ignore',
-                    shell: true
-                });
-
-                vscode.on('error', (err) => {
-                    console.log(`VSCode path ${vscodePath} failed:`, err.message);
-                });
-
-                vscode.unref();
-                vscodeOpened = true;
-                console.log(`VSCode opened successfully using: ${vscodePath}`);
-                break;
-
-            } catch (error) {
-                lastError = error;
-                console.log(`Failed to open VSCode with ${vscodePath}:`, error.message);
+                let opened = false;
+                for (const p of fallbackPaths) {
+                    try {
+                        await new Promise((resolve, reject) => execFile(p, diffArgs, execOpts, (err) => err ? reject(err) : resolve()));
+                        opened = true;
+                        break;
+                    } catch {}
+                }
+                if (!opened) {
+                    console.error('Failed to open VSCode diff: code command not found');
+                }
             }
-        }
-
-        if (!vscodeOpened) {
-            console.error('Could not find VSCode. Tried paths:', vscodePaths);
-            console.error('Last error:', lastError);
-            // Fallback: open files in default editor
-            shell.openExternal(file1Path);
-            shell.openExternal(file2Path);
-        }
+        });
 
     } catch (error) {
         console.error('Failed to open diff:', error);
     }
 });
-
 
 electron.ipcMain.handle('reset-hot-key', async (event, arg) => {
         try {
