@@ -122,11 +122,19 @@ async function main() {
     console.log('[build-jsoncrack] Installing dependencies (this may take a while)...');
     run('pnpm install', { cwd: sourcePath, timeout: 300000 });
 
-    // 6. Build www app
+    // 6. Disable source maps to reduce output size (~45 MB)
+    const nextCfg = path.join(sourcePath, 'apps', 'www', 'next.config.js');
+    if (fs.existsSync(nextCfg)) {
+      const content = fs.readFileSync(nextCfg, 'utf-8');
+      fs.writeFileSync(nextCfg, content.replace('productionBrowserSourceMaps: true', 'productionBrowserSourceMaps: false'));
+      console.log('[build-jsoncrack] Disabled productionBrowserSourceMaps in next.config.js');
+    }
+
+    // 7. Build www app
     console.log('[build-jsoncrack] Building www app...');
     run('pnpm build:www', { cwd: sourcePath, timeout: 600000, inherit: true });
 
-    // 7. Verify build output
+    // 8. Verify build output
     const outDir = path.join(sourcePath, 'apps', 'www', 'out');
     if (!fs.existsSync(outDir)) {
       throw new Error(`Build output not found at ${outDir}`);
@@ -138,24 +146,24 @@ async function main() {
       console.log('[build-jsoncrack] Build output contents:', items.join(', '));
     }
 
-    // 8. Clean and create target dir
+    // 9. Clean and create target dir
     if (fs.existsSync(JSONCRACK_DIR)) {
       fs.rmSync(JSONCRACK_DIR, { recursive: true, force: true });
     }
     fs.mkdirSync(JSONCRACK_DIR, { recursive: true });
 
-    // 9. Copy build output to json-crack/
+    // 10. Copy build output to json-crack/
     console.log('[build-jsoncrack] Copying build output...');
     cpDir(outDir, JSONCRACK_DIR);
 
-    // 10. Verify
+    // 11. Verify
     if (!fs.existsSync(path.join(JSONCRACK_DIR, 'editor.html'))) {
       console.error('[build-jsoncrack] WARNING: editor.html not found after copy!');
     }
 
     console.log('[build-jsoncrack] Done! Static files extracted to json-crack/');
   } finally {
-    // 11. Cleanup temp directory
+    // 12. Cleanup temp directory
     if (fs.existsSync(tmpDir)) {
       console.log('[build-jsoncrack] Cleaning up temp directory...');
       fs.rmSync(tmpDir, { recursive: true, force: true });

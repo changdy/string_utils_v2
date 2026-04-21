@@ -44,8 +44,51 @@ jobs:
           git tag "v${{ steps.check.outputs.new_version }}"
           git push origin "v${{ steps.check.outputs.new_version }}"
 
-  build:
+  prepare-assets:
     needs: check-version
+    if: needs.check-version.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Setup pnpm
+        run: corepack enable && corepack prepare pnpm@10.20.0 --activate
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build JSONCrack & Fetch JSONHero (parallel)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/build-jsoncrack.js &
+          PID_CRACK=$!
+          node scripts/fetch-jsonhero.js &
+          PID_HERO=$!
+          wait $PID_CRACK || exit 1
+          wait $PID_HERO || exit 1
+
+      - name: Upload json-crack artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: json-crack
+          path: json-crack/
+
+      - name: Upload jsonhero artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jsonhero
+          path: jsonhero/
+
+  build:
+    needs: [check-version, prepare-assets]
     if: needs.check-version.outputs.should_build == 'true'
     strategy:
       matrix:
@@ -72,21 +115,20 @@ jobs:
           node-version: 24
           cache: 'npm'
 
-      - name: Setup pnpm
-        run: corepack enable && corepack prepare pnpm@10.20.0 --activate
-
       - name: Install dependencies
         run: npm ci
 
-      - name: Fetch JSONHero release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/fetch-jsonhero.js
+      - name: Download json-crack artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: json-crack
+          path: json-crack/
 
-      - name: Build JSONCrack
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/build-jsoncrack.js
+      - name: Download jsonhero artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: jsonhero
+          path: jsonhero/
 
       - name: Configure macOS build
         if: matrix.platform == 'macos-latest'
@@ -137,6 +179,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: '*-build'
           merge-multiple: true  # 合并所有平台的 artifact
 
       - name: Create Release
