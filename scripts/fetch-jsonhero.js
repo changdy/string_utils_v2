@@ -181,6 +181,14 @@ async function main() {
     console.warn('[fetch-jsonhero] WARNING: public/ directory not found (frontend may not work).');
   }
 
+  // 8. Ensure dist/package.json exists so jsonhero is treated as CommonJS at runtime.
+  //    Without this, the packaged app (asar) cannot create it on the fly and fails with ENOTDIR.
+  const distPkgFile = path.join(JSONHERO_DIR, 'dist', 'package.json');
+  if (!fs.existsSync(distPkgFile)) {
+    fs.writeFileSync(distPkgFile, '{"type":"commonjs"}');
+    console.log('[fetch-jsonhero] Created dist/package.json (commonjs).');
+  }
+
   console.log('[fetch-jsonhero] Done! Extracted to jsonhero/');
 }
 
