@@ -94,14 +94,15 @@ function appendToolIcon() {
         let obj;
         if (x.userScripts) {
             let img_path = path.join(x.path + ".svg");
+            let img_path_png = path.join(x.path + ".png");
             obj = `
                <div class="fun-list-item ${x.name}">
-                   <img class="fun-icon" src="${img_path}" alt="${x.describe}">
+                   <img class="fun-icon" src="${img_path}" onerror="this.onerror=null;this.src='${img_path_png}'" alt="${x.describe}">
                </div>`;
         } else {
             obj = `
                <div class="fun-list-item ${x.name}">
-                   <img class="fun-icon" src="../assets/fun-icon/${x.name}.svg" alt="${x.describe}">
+                   <img class="fun-icon" src="../assets/fun-icon/${x.name}.svg" onerror="this.onerror=null;this.src='../assets/fun-icon/${x.name}.png'" alt="${x.describe}">
                </div>`
         }
         wrapper.insertAdjacentHTML('afterbegin', obj);
